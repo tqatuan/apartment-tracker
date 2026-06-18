@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apartment Rental Tracker</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
     <style>
         * {
             margin: 0;
@@ -475,34 +472,6 @@
     </div>
 
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDBHt9Wvp_9KCYms5fa7Z38uerU7zSHEjI",
-            authDomain: "apartment-tracking-87361.firebaseapp.com",
-            projectId: "apartment-tracking-87361",
-            databaseURL: "https://apartment-tracking-87361.firebaseio.com",
-            storageBucket: "apartment-tracking-87361.appspot.com",
-            messagingSenderId: "760049651473",
-            appId: "1:760049651473:web:abc123"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        
-        // Track tracking data in memory and sync with Firebase
-        let trackingData = {};
-        let firebaseReady = false;
-
-        // Load tracking data from Firebase on page load
-        db.ref('apartmentTracking').on('value', (snapshot) => {
-            trackingData = snapshot.val() || {};
-            firebaseReady = true;
-            if (document.readyState === 'complete') {
-                applyFilters();
-            }
-        });
-
         let apartments = {
             westside: [
                 { id: 1, name: 'Highland Orchard Apartments', address: '100 S Highland Ave', city: 'Placentia', website: 'https://www.westsiderentals.com/placentia-ca/highland-orchard-apartments-mtp9s0j', price: 2395, dishwasher: '', phone: '(657) 272-7557' },
@@ -538,26 +507,51 @@
         let deletedApartments = null;
         let deletedContainer = null;
 
-        // Get tracking info for an apartment (from Firebase)
-        function getTrackingInfo(aptId) {
-            return trackingData[aptId] || { reachedOut: false, notes: '', potential: false };
+        // Load tracking data from localStorage
+        function loadTrackingData() {
+            const data = localStorage.getItem('apartmentTracking');
+            return data ? JSON.parse(data) : {};
         }
 
-        // Update tracking info in Firebase
+        // Save tracking data to localStorage
+        function saveTrackingData(data) {
+            localStorage.setItem('apartmentTracking', JSON.stringify(data));
+        }
+
+        // Load deleted apartments from localStorage
+        function loadDeletedApartments() {
+            const data = localStorage.getItem('deletedApartments');
+            return data ? JSON.parse(data) : [];
+        }
+
+        // Save deleted apartments to localStorage
+        function saveDeletedApartments(data) {
+            localStorage.setItem('deletedApartments', JSON.stringify(data));
+        }
+
+        // Get tracking info for an apartment
+        function getTrackingInfo(aptId) {
+            const data = loadTrackingData();
+            return data[aptId] || { reachedOut: false, notes: '', potential: false };
+        }
+
+        // Update tracking info
         function updateTracking(aptId, reachedOut, notes) {
-            trackingData[aptId] = { ...trackingData[aptId], reachedOut, notes };
-            db.ref('apartmentTracking/' + aptId).set(trackingData[aptId]);
+            const data = loadTrackingData();
+            data[aptId] = { ...data[aptId], reachedOut, notes };
+            saveTrackingData(data);
             applyFilters();
         }
 
         // Toggle most potential status
         function toggleMostPotential(aptId) {
-            if (!trackingData[aptId]) {
-                trackingData[aptId] = { reachedOut: false, notes: '', potential: true };
+            const data = loadTrackingData();
+            if (!data[aptId]) {
+                data[aptId] = { reachedOut: false, notes: '', potential: true };
             } else {
-                trackingData[aptId].potential = !trackingData[aptId].potential;
+                data[aptId].potential = !data[aptId].potential;
             }
-            db.ref('apartmentTracking/' + aptId).set(trackingData[aptId]);
+            saveTrackingData(data);
             applyFilters();
         }
 
@@ -778,6 +772,7 @@
             });
 
             // Get all apartments marked as most potential (from all sources)
+            const trackingData = loadTrackingData();
             const allApartments = [...apartments.westside, ...apartments.zillow, ...apartments.acom];
             const potentialApts = allApartments.filter(apt => {
                 const tracking = trackingData[apt.id];
@@ -795,15 +790,8 @@
             renderCards(acomFiltered, 'acomContainer');
         }
 
-        // Initial render (when Firebase is ready)
-        document.addEventListener('DOMContentLoaded', function() {
-            const checkReady = setInterval(() => {
-                if (firebaseReady) {
-                    clearInterval(checkReady);
-                    applyFilters();
-                }
-            }, 100);
-        });
+        // Initial render
+        applyFilters();
     </script>
 </body>
 </html>
