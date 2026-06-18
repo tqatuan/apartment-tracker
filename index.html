@@ -284,6 +284,31 @@
             background: #e0a800;
         }
 
+        .potential-btn {
+            background: #ff6b6b;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+        }
+
+        .potential-btn:hover {
+            background: #ee5a52;
+        }
+
+        .potential-btn.marked {
+            background: #ffd43b;
+            color: #333;
+        }
+
+        .potential-btn.marked:hover {
+            background: #ffc922;
+        }
+
         .notes-textarea {
             width: 100%;
             padding: 8px;
@@ -421,6 +446,12 @@
             </div>
         </div>
 
+        <!-- MOST POTENTIAL SECTION -->
+        <div class="section-title">
+            <h2>⭐ Most Potential <span class="count" id="potentialCount">0</span></h2>
+        </div>
+        <div id="potentialContainer" class="apartments-grid"></div>
+
         <!-- WESTSIDE RENTALS SECTION -->
         <div class="section-title">
             <h2>🏢 Westside Rentals <span class="count" id="wsCount">0</span></h2>
@@ -432,6 +463,12 @@
             <h2>🔑 Zillow <span class="count" id="zilCount">0</span></h2>
         </div>
         <div id="zilContainer" class="apartments-grid"></div>
+
+        <!-- APARTMENTS.COM SECTION -->
+        <div class="section-title">
+            <h2>🏠 Apartments.com <span class="count" id="acomCount">0</span></h2>
+        </div>
+        <div id="acomContainer" class="apartments-grid"></div>
     </div>
 
     <script>
@@ -460,6 +497,9 @@
                 { id: 27, name: 'Villa Del Sol Anaheim', address: '2828 W Lincoln Ave APT 267', city: 'Anaheim', website: 'https://www.zillow.com/apartments/anaheim-ca/villa-del-sol-anaheim/5XkGZh/', price: 2400, dishwasher: '', phone: '' },
                 { id: 28, name: 'Westmont Apartment Homes', address: '3230 W Lincoln Ave', city: 'Anaheim', website: 'https://www.zillow.com/apartments/anaheim-ca/westmont-apartment-homes/5XkKPk/', price: 2450, dishwasher: '', phone: '' },
                 { id: 29, name: 'Cinnamon Trees - 212 S Kraemer Blvd', address: '212 S Kraemer Blvd UNIT 2116', city: 'Placentia', website: 'https://www.zillow.com/homedetails/212-S-Kraemer-Blvd-UNIT-2116-Placentia-CA-92870/25737300_zpid/', price: 2380, dishwasher: 'yes', phone: '' }
+            ],
+            acom: [
+                { id: 30, name: 'Villa Santa Fe', address: 'Placentia', city: 'Placentia', website: 'https://www.apartments.com/villa-santa-fe-placentia-ca/m0y2xhj/', price: null, dishwasher: '', phone: '' }
             ]
         };
 
@@ -491,13 +531,25 @@
         // Get tracking info for an apartment
         function getTrackingInfo(aptId) {
             const data = loadTrackingData();
-            return data[aptId] || { reachedOut: false, notes: '' };
+            return data[aptId] || { reachedOut: false, notes: '', potential: false };
         }
 
         // Update tracking info
         function updateTracking(aptId, reachedOut, notes) {
             const data = loadTrackingData();
-            data[aptId] = { reachedOut, notes };
+            data[aptId] = { ...data[aptId], reachedOut, notes };
+            saveTrackingData(data);
+            applyFilters();
+        }
+
+        // Toggle most potential status
+        function toggleMostPotential(aptId) {
+            const data = loadTrackingData();
+            if (!data[aptId]) {
+                data[aptId] = { reachedOut: false, notes: '', potential: true };
+            } else {
+                data[aptId].potential = !data[aptId].potential;
+            }
             saveTrackingData(data);
             applyFilters();
         }
@@ -615,6 +667,24 @@
             return { text: 'Unknown', class: 'badge-unknown' };
         }
 
+        function isDuplicateListing(apt, excludeSource) {
+            const nameNormalized = apt.name.toLowerCase().trim();
+            const addressNormalized = apt.address.toLowerCase().trim();
+            
+            for (const source in apartments) {
+                if (source === excludeSource) continue;
+                
+                const match = apartments[source].find(a => 
+                    (a.name.toLowerCase().trim() === nameNormalized || 
+                     a.address.toLowerCase().trim() === addressNormalized) && 
+                    a.id !== apt.id
+                );
+                
+                if (match) return true;
+            }
+            return false;
+        }
+
         function renderCards(apartmentList, containerId) {
             const container = document.getElementById(containerId);
             if (apartmentList.length === 0) {
@@ -626,6 +696,8 @@
                 const dishStatus = getDishwasherStatus(apt.dishwasher);
                 const tracking = getTrackingInfo(apt.id);
                 const reachedOutClass = tracking.reachedOut ? 'marked' : '';
+                const potentialClass = tracking.potential ? 'marked' : '';
+                const priceDisplay = apt.price ? `$${apt.price.toLocaleString()}/mo` : 'Price not available';
 
                 return `
                     <div class="apartment-card">
@@ -634,7 +706,7 @@
                             <p>${apt.address}, ${apt.city}</p>
                         </div>
                         <div class="card-body">
-                            <div class="price">$${apt.price.toLocaleString()}/mo</div>
+                            <div class="price">${priceDisplay}</div>
                             <div class="info-row">
                                 <span class="info-label">City:</span>
                                 <span class="info-value">${apt.city}</span>
@@ -650,6 +722,12 @@
                             <button class="delete-btn" onclick="deleteApartment(${apt.id})">🗑️ Remove</button>
                         </div>
                         <div class="card-actions">
+                            <div class="action-item">
+                                <label class="action-label">⭐ Most Potential</label>
+                                <button class="potential-btn ${potentialClass}" onclick="toggleMostPotential(${apt.id})">
+                                    ${tracking.potential ? '✓ Most Potential' : 'Add to Top List'}
+                                </button>
+                            </div>
                             <div class="action-item">
                                 <label class="action-label">📞 Reached Out?</label>
                                 <button class="reach-out-btn ${reachedOutClass}" onclick="toggleReachedOut(${apt.id})">
@@ -672,20 +750,43 @@
             const city = document.getElementById('filterCity').value.toLowerCase();
 
             const filterFn = (apt) => {
-                if (apt.price > maxPrice) return false;
+                if (apt.price && apt.price > maxPrice) return false;
                 if (dishwasher && apt.dishwasher !== dishwasher) return false;
                 if (city && !apt.city.toLowerCase().includes(city)) return false;
-                return true;
+                return !isDuplicateListing(apt, null);
             };
 
             const wsFiltered = apartments.westside.filter(filterFn);
-            const zilFiltered = apartments.zillow.filter(filterFn);
+            const zilFiltered = apartments.zillow.filter((apt) => {
+                if (apt.price && apt.price > maxPrice) return false;
+                if (dishwasher && apt.dishwasher !== dishwasher) return false;
+                if (city && !apt.city.toLowerCase().includes(city)) return false;
+                return !isDuplicateListing(apt, 'zillow');
+            });
+            const acomFiltered = apartments.acom.filter((apt) => {
+                if (apt.price && apt.price > maxPrice) return false;
+                if (dishwasher && apt.dishwasher !== dishwasher) return false;
+                if (city && !apt.city.toLowerCase().includes(city)) return false;
+                return !isDuplicateListing(apt, 'acom');
+            });
 
+            // Get all apartments marked as most potential (from all sources)
+            const trackingData = loadTrackingData();
+            const allApartments = [...apartments.westside, ...apartments.zillow, ...apartments.acom];
+            const potentialApts = allApartments.filter(apt => {
+                const tracking = trackingData[apt.id];
+                return tracking && tracking.potential === true;
+            });
+
+            document.getElementById('potentialCount').textContent = potentialApts.length;
             document.getElementById('wsCount').textContent = wsFiltered.length;
             document.getElementById('zilCount').textContent = zilFiltered.length;
+            document.getElementById('acomCount').textContent = acomFiltered.length;
 
+            renderCards(potentialApts, 'potentialContainer');
             renderCards(wsFiltered, 'wsContainer');
             renderCards(zilFiltered, 'zilContainer');
+            renderCards(acomFiltered, 'acomContainer');
         }
 
         // Initial render
