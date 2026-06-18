@@ -237,6 +237,70 @@
             background: #c82333;
         }
 
+        .card-actions {
+            padding: 15px;
+            border-top: 1px solid #dee2e6;
+            background: #f8f9fa;
+        }
+
+        .action-item {
+            margin-bottom: 12px;
+        }
+
+        .action-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .action-label {
+            font-weight: 600;
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .reach-out-btn {
+            background: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+        }
+
+        .reach-out-btn:hover {
+            background: #218838;
+        }
+
+        .reach-out-btn.marked {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .reach-out-btn.marked:hover {
+            background: #e0a800;
+        }
+
+        .notes-textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        .notes-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -321,6 +385,44 @@
             ]
         };
 
+        // Load tracking data from localStorage
+        function loadTrackingData() {
+            const data = localStorage.getItem('apartmentTracking');
+            return data ? JSON.parse(data) : {};
+        }
+
+        // Save tracking data to localStorage
+        function saveTrackingData(data) {
+            localStorage.setItem('apartmentTracking', JSON.stringify(data));
+        }
+
+        // Get tracking info for an apartment
+        function getTrackingInfo(aptId) {
+            const data = loadTrackingData();
+            return data[aptId] || { reachedOut: false, notes: '' };
+        }
+
+        // Update tracking info
+        function updateTracking(aptId, reachedOut, notes) {
+            const data = loadTrackingData();
+            data[aptId] = { reachedOut, notes };
+            saveTrackingData(data);
+            applyFilters();
+        }
+
+        // Toggle reached out status
+        function toggleReachedOut(aptId) {
+            const info = getTrackingInfo(aptId);
+            updateTracking(aptId, !info.reachedOut, info.notes);
+        }
+
+        // Update notes
+        function updateNotes(aptId) {
+            const notesTextarea = document.getElementById(`notes-${aptId}`);
+            const info = getTrackingInfo(aptId);
+            updateTracking(aptId, info.reachedOut, notesTextarea.value);
+        }
+
         function getDishwasherStatus(value) {
             if (value === 'yes') return { text: 'Yes ✓', class: 'badge-yes' };
             if (value === 'no') return { text: 'No ✗', class: 'badge-no' };
@@ -336,6 +438,9 @@
 
             container.innerHTML = apartmentList.map(apt => {
                 const dishStatus = getDishwasherStatus(apt.dishwasher);
+                const tracking = getTrackingInfo(apt.id);
+                const reachedOutClass = tracking.reachedOut ? 'marked' : '';
+
                 return `
                     <div class="apartment-card">
                         <div class="card-header">
@@ -356,6 +461,18 @@
                         <div class="card-footer">
                             <a href="${apt.website}" target="_blank">View Listing</a>
                             ${apt.phone ? `<a href="tel:${apt.phone}">${apt.phone}</a>` : ''}
+                        </div>
+                        <div class="card-actions">
+                            <div class="action-item">
+                                <label class="action-label">📞 Reached Out?</label>
+                                <button class="reach-out-btn ${reachedOutClass}" onclick="toggleReachedOut(${apt.id})">
+                                    ${tracking.reachedOut ? '✓ Reached Out' : 'Mark as Reached Out'}
+                                </button>
+                            </div>
+                            <div class="action-item">
+                                <label class="action-label">📝 Notes</label>
+                                <textarea class="notes-textarea" id="notes-${apt.id}" placeholder="Add notes or comments..." onchange="updateNotes(${apt.id})">${tracking.notes}</textarea>
+                            </div>
                         </div>
                     </div>
                 `;
