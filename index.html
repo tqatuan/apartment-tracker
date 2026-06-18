@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apartment Rental Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header-subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .apartments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .apartment-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .apartment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        .card-header h2 {
+            margin-bottom: 5px;
+            font-size: 1.3em;
+        }
+
+        .card-header p {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .info-row {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #667eea;
+            min-width: 120px;
+        }
+
+        .info-value {
+            color: #333;
+            text-align: right;
+            flex: 1;
+        }
+
+        .price-range {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 15px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-yes {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-no {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-unknown {
+            background: #e7e7ff;
+            color: #004f99;
+        }
+
+        .card-footer {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .card-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .card-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-small {
+            background: #dc3545;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.85em;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        .btn-small:hover {
+            background: #c82333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        .empty-state h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏠 Apartment Rental Tracker</h1>
+            <p class="header-subtitle">Track and compare apartments you're interested in</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number" id="totalCount">2</div>
+                <div class="stat-label">Total Apartments</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="avgPrice">$2,520</div>
+                <div class="stat-label">Average Price Range</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="dishwasherCount">0</div>
+                <div class="stat-label">With Dishwasher</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3 style="margin-bottom: 20px; color: #333;">Add New Apartment</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Apartment Name</label>
+                    <input type="text" id="name" placeholder="e.g., Modern Lofts Downtown">
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" id="address" placeholder="Street address, City, State, ZIP">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="phone" placeholder="(123) 456-7890">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Website</label>
+                    <input type="url" id="website" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Price Min ($)</label>
+                    <input type="number" id="priceMin" placeholder="1500">
+                </div>
+                <div class="form-group">
+                    <label>Price Max ($)</label>
+                    <input type="number" id="priceMax" placeholder="2500">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Has Dishwasher?</label>
+                    <select id="dishwasher">
+                        <option value="">Unknown</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Distance to Work (miles)</label>
+                    <input type="number" id="distance" placeholder="5.2" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="notes" placeholder="Add any other notes..."></textarea>
+                </div>
+            </div>
+
+            <button onclick="addApartment()">+ Add Apartment</button>
+        </div>
+
+        <div id="apartmentsContainer" class="apartments-grid"></div>
+    </div>
+
+    <script>
+        let apartments = [
+            {
+                id: 1,
+                name: 'Highland Orchard Apartments',
+                address: '100 S Highland Ave, Placentia, CA 92870',
+                website: 'https://www.westsiderentals.com/placentia-ca/highland-orchard-apartments-mtp9s0j',
+                priceMin: 2395,
+                priceMax: 2695,
+                dishwasher: '',
+                distance: null,
+                phone: '(657) 272-7557',
+                notes: 'Cat friendly, close freeway access, high vaulted ceilings, large patios'
+            },
+            {
+                id: 2,
+                name: 'Summerhill Village Apartments',
+                address: '2201 E La Palma Ave, Anaheim, CA 92806',
+                website: 'https://www.westsiderentals.com/anaheim-ca/summerhill-village-apartments-gfz9byz',
+                priceMin: 1950,
+                priceMax: 2995,
+                dishwasher: '',
+                distance: null,
+                phone: '(714) 694-7315',
+                notes: 'Studio to 3 bedroom options, no pets allowed'
+            },
+            {
+                id: 3,
+                name: '1655 W Malvern Ave',
+                address: '1655 W Malvern Ave, Fullerton, CA 92833',
+                website: 'https://www.westsiderentals.com/fullerton-ca/1655-w-malvern-ave-unit-1655-06-9lzd5s4',
+                priceMin: 2395,
+                priceMax: 2395,
+                dishwasher: '',
+                distance: null,
+                phone: '(562) 317-7574',
+                notes: '2BR/1BA - Orange County'
+            },
+            {
+                id: 4,
+                name: '8882 Heil Ave',
+                address: '8882 Heil Ave, Westminster, CA 92683',
+                website: 'https://www.westsiderentals.com/westminster-ca/8882-heil-ave-s6kc2t6',
+                priceMin: 1000,
+                priceMax: 1000,
+                dishwasher: '',
+                distance: null,
+                phone: '(657) 655-6239',
+                notes: '2BR - Great Value! Orange County'
+            },
+            {
+                id: 5,
+                name: '113 S Lillie Ave',
+                address: '113 S Lillie Ave, Fullerton, CA 92831',
+                website: 'https://www.westsiderentals.com/fullerton-ca/113-s-lillie-ave-unit-113-06-rre49w3',
+                priceMin: 2395,
+                priceMax: 2395,
+                dishwasher: '',
+                distance: null,
+                phone: '(562) 528-8100',
+                notes: '2BR/2BA - Orange County'
+            },
+            {
+                id: 6,
+                name: '7732 Chapman Ave',
+                address: '7732 Chapman Ave, Garden Grove, CA 92841',
+                website: 'https://www.westsiderentals.com/garden-grove-ca/7732-chapman-ave-unit-7732-4-y5x08ft',
+                priceMin: 2395,
+                priceMax: 2395,
+                dishwasher: '',
+                distance: null,
+                phone: '(657) 216-6996',
+                notes: '2BR - Garden Grove'
+            },
+            {
+                id: 7,
+                name: '7722 Chapman Ave',
+                address: '7722 Chapman Ave, Garden Grove, CA 92841',
+                website: 'https://www.westsiderentals.com/garden-grove-ca/7722-chapman-ave-unit-7722-2-b6wc0rc',
+                priceMin: 2395,
+                priceMax: 2395,
+                dishwasher: '',
+                distance: null,
+                phone: '(657) 837-3561',
+                notes: '2BR - Garden Grove'
+            },
+            {
+                id: 8,
+                name: '1131 W Highland St',
+                address: '1131 W Highland St, Santa Ana, CA 92703',
+                website: 'https://www.westsiderentals.com/santa-ana-ca/1131-w-highland-st-unit-e-69h2cms',
+                priceMin: 2200,
+                priceMax: 2200,
+                dishwasher: '',
+                distance: null,
+                phone: '(657) 567-5716',
+                notes: '2BR - Santa Ana - Best Price!'
+            },
+            {
+                id: 9,
+                name: '7702 Amberleaf Cir',
+                address: '7702 Amberleaf Cir, Huntington Beach, CA 92648',
+                website: 'https://www.westsiderentals.com/huntington-beach-ca/7702-amberleaf-cir-unit-4-lw4y8zd',
+                priceMin: 2450,
+                priceMax: 2450,
+                dishwasher: '',
+                distance: null,
+                phone: '(657) 300-5593',
+                notes: '2BR - Huntington Beach'
+            },
+            {
+                id: 10,
+                name: '6412 Crescent Ave',
+                address: '6412 Crescent Ave, Buena Park, CA 90620',
+                website: 'https://www.westsiderentals.com/buena-park-ca/6412-crescent-ave-unit-23-k314xec',
+                priceMin: 2495,
+                priceMax: 2495,
+                dishwasher: '',
+                distance: null,
+                phone: '(714) 563-4404',
+                notes: '2BR - Buena Park'
+            },
+            {
+                id: 11,
+                name: '8602 Chapman Ave',
+                address: '8602 Chapman Ave, Garden Grove, CA 92841',
+                website: 'https://www.westsiderentals.com/garden-grove-ca/8602-chapman-ave-9l2j5s7',
+                priceMin: 2500,
+                priceMax: 2500,
+                dishwasher: '',
+                distance: null,
+                phone: '(657) 722-7843',
+                notes: '2BR - Garden Grove - At Budget Max'
+            }
+        ];
+
+        function addApartment() {
+            const name = document.getElementById('name').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const website = document.getElementById('website').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const priceMin = parseFloat(document.getElementById('priceMin').value);
+            const priceMax = parseFloat(document.getElementById('priceMax').value);
+            const dishwasher = document.getElementById('dishwasher').value;
+            const distance = document.getElementById('distance').value ? parseFloat(document.getElementById('distance').value) : null;
+            const notes = document.getElementById('notes').value.trim();
+
+            if (!name || !address) {
+                alert('Please enter at least apartment name and address');
+                return;
+            }
+
+            const apartment = {
+                id: Math.max(...apartments.map(a => a.id), 0) + 1,
+                name,
+                address,
+                website,
+                phone,
+                priceMin: isNaN(priceMin) ? null : priceMin,
+                priceMax: isNaN(priceMax) ? null : priceMax,
+                dishwasher,
+                distance,
+                notes
+            };
+
+            apartments.push(apartment);
+            clearForm();
+            render();
+        }
+
+        function deleteApartment(id) {
+            if (confirm('Are you sure you want to delete this apartment?')) {
+                apartments = apartments.filter(a => a.id !== id);
+                render();
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('website').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('priceMin').value = '';
+            document.getElementById('priceMax').value = '';
+            document.getElementById('dishwasher').value = '';
+            document.getElementById('distance').value = '';
+            document.getElementById('notes').value = '';
+        }
+
+        function formatPrice(min, max) {
+            if (min && max) {
+                return `$${min.toLocaleString()} - $${max.toLocaleString()}/mo`;
+            } else if (min) {
+                return `$${min.toLocaleString()}/mo`;
+            } else if (max) {
+                return `$${max.toLocaleString()}/mo`;
+            }
+            return 'Not specified';
+        }
+
+        function getDishwasherStatus(value) {
+            if (value === 'yes') return { text: 'Yes', class: 'status-yes' };
+            if (value === 'no') return { text: 'No', class: 'status-no' };
+            return { text: 'Unknown', class: 'status-unknown' };
+        }
+
+        function render() {
+            const container = document.getElementById('apartmentsContainer');
+            
+            if (apartments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h2>No apartments yet</h2>
+                        <p>Add your first apartment using the form above!</p>
+                    </div>
+                `;
+                updateStats();
+                return;
+            }
+
+            container.innerHTML = apartments.map(apt => {
+                const dishStatus = getDishwasherStatus(apt.dishwasher);
+                return `
+                    <div class="apartment-card">
+                        <div class="card-header">
+                            <h2>${apt.name}</h2>
+                            <p>${apt.address}</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="price-range">${formatPrice(apt.priceMin, apt.priceMax)}</div>
+                            
+                            ${apt.phone ? `
+                                <div class="info-row">
+                                    <span class="info-label">📞 Phone:</span>
+                                    <span class="info-value"><a href="tel:${apt.phone}">${apt.phone}</a></span>
+                                </div>
+                            ` : ''}
+
+                            ${apt.distance !== null ? `
+                                <div class="info-row">
+                                    <span class="info-label">📍 Distance:</span>
+                                    <span class="info-value">${apt.distance} miles</span>
+                                </div>
+                            ` : ''}
+
+                            <div class="info-row">
+                                <span class="info-label">🍽️ Dishwasher:</span>
+                                <span class="status-badge ${dishStatus.class}">${dishStatus.text}</span>
+                            </div>
+
+                            ${apt.notes ? `
+                                <div class="info-row">
+                                    <span class="info-label">📝 Notes:</span>
+                                    <span class="info-value">${apt.notes}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="card-footer">
+                            ${apt.website ? `<a href="${apt.website}" target="_blank">View Website</a>` : ''}
+                            <button class="btn-small" onclick="deleteApartment(${apt.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('totalCount').textContent = apartments.length;
+            
+            if (apartments.length > 0) {
+                const avgMin = apartments.reduce((sum, a) => sum + (a.priceMin || 0), 0) / apartments.length;
+                const avgMax = apartments.reduce((sum, a) => sum + (a.priceMax || 0), 0) / apartments.length;
+                const avg = Math.round((avgMin + avgMax) / 2);
+                document.getElementById('avgPrice').textContent = avg > 0 ? `$${avg.toLocaleString()}` : 'N/A';
+            }
+
+            const dishwasherCount = apartments.filter(a => a.dishwasher === 'yes').length;
+            document.getElementById('dishwasherCount').textContent = dishwasherCount;
+        }
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>
